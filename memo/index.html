@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIL Memo</title>
+  <link rel="stylesheet" href="../component.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header>
+  <nav>
+    <h1>TIL MEMO</h1>
+    <button type="button" onclick="onBackClick()">
+      뒤로가기
+    </button>
+  </nav>
+</header>
+<main>
+  <h2>메모 작성</h2>
+  <div class="memo_edit_container">
+    <label for="memo-title">
+      제목
+      <input type="text" id="memo-title" placeholder="제목">
+    </label>
+    <label for="memo-content">
+      내용
+      <textarea id="memo-content" placeholder="메모"></textarea>
+    </label>
+    <label for="memo-tags">
+      태그
+      <input type="text" id="memo-tags" placeholder="태그 (쉼표로 분리)">
+    </label>
+  </div>
+  <div class="button_container">
+    <button type="button" id="save_memo" onclick="onSaveClick()">저장</button>
+    <button type="button" id="cancel_memo" onclick="onBackClick()">취소</button>
+  </div>
+</main>
+<footer>
+  <p>© 2024 Chae-Hyeonu. All rights reserved.</p>
+</footer>
+<script src="./script.js"></script>
+</body>
+</html>
