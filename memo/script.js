@@ -63,7 +63,7 @@ const Tables = {
   memos: Database.createTable('memos',
     { id: (last) => last ? last.id + 1 : 1 , title: '', content: '', createdAt: new Date().toISOString() }),
   tag_list: Database.createTable('tag_list',
-    { memoId: 1, tagId: 1 }),
+    { memo_id: 1, tag_id: 1 }),
 };
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -72,6 +72,7 @@ const $MemoTitle = document.querySelector('main > h2');
 const $MemoTitleInput = document.querySelector('#memo-title');
 const $MemoContentInput = document.querySelector('#memo-content');
 const $MemoTagInput = document.querySelector('#memo-tags');
+const $DeleteMemoButton = document.querySelector('#delete_memo');
 
 const searchParams = new URLSearchParams(location.search);
 const IsModifyMode = searchParams.has('memoId');
@@ -91,44 +92,85 @@ function init() {
       Database.select(Tables.tags, (tags) => tags.id === tag.tag_id)[0].name);
     $MemoTagInput.value = tagNames.join(', ');
   }
+  else {
+    $DeleteMemoButton.style.display = 'none';
+  }
 }
 init();
+
+
+/** 사용하지 않는 태그를 삭제합니다. */
+function removeUnusedTags() {
+  const unUsedTags = Database.select(Tables.tags, (tag) => {
+    return Database.select(Tables.tag_list, (tagList) => tagList.tag_id === tag.id).length === 0;
+  });
+
+  Database.delete(Tables.tags, (tag) =>
+    unUsedTags.some(unUsedTag => unUsedTag.id === tag.id));
+}
+
 
 function onSaveClick() {
   const title = $MemoTitleInput.value;
   const content = $MemoContentInput.value;
 
   const memo = { title, content };
+  let targetMemoId = ModifyMemoId;
 
+  // 수정 모드일 경우 메모 수정, 아닐 경우 메모 추가
   if (IsModifyMode) {
-    Database.update(Tables.memos, (memo) => memo.id === ModifyMemoId , memo)
+    Database.update(Tables.memos, (memo) => memo.id === targetMemoId , memo)
   } else {
     Database.insert(Tables.memos, memo);
+    targetMemoId = Tables.memos.data[Tables.memos.data.length - 1].id;
   }
 
-  Database.delete(Tables.tag_list, (tag) => tag.memoId === ModifyMemoId);
-  const tags = $MemoTagInput.value.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
-  const hasTagIds = tags.map(tag =>
-    Database.select(Tables.tags, (tags) => tags.name === tag)[0] !== undefined);
+  // 태그 삭제 후, 태그 추가
+  Database.delete(Tables.tag_list, (tag) => tag.memo_id === targetMemoId);
+  const newTags = $MemoTagInput.value.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
-  // 태그가 없을 경우 추가
-  for (let i = 0; i < hasTagIds.length; i++) {
-    if (hasTagIds[i] === undefined)
-      return;
-    Database.insert(Tables.tags, { name: tags[i] });
-  }
+  // 태그가 없을 경우 태그를 새롭게 추가
+  newTags.forEach(newTag => {
+    const tagId = Database.select(Tables.tags, (tag) => tag.name === newTag)[0];
 
-  // 태그 리스트에 추가
-  const tagIds = tags.map(tag =>
-    Database.select(Tables.tags, (tags) => tags.name === tag)[0]);
+    if (!tagId)
+      Database.insert(Tables.tags, { name: newTag });
+  });
 
-  for (let i = 0; i < tagIds.length; i++) {
-    Database.insert(Tables.tag_list, { memoId: ModifyMemoId, tagId: tagIds[i].id });
-  }
-  console.log(tagIds);
+  // 태그 리스트에 태그 추가
+  newTags.forEach(newTag => {
+    const tagId = Database.select(Tables.tags, (tag) => tag.name === newTag)[0];
+    Database.insert(Tables.tag_list, { memo_id: targetMemoId, tag_id: tagId.id });
+  });
+
+  // 사용하지 않는 태그를 태그 테이블에서 삭제
+  removeUnusedTags();
+
   Database.saveDatabase(Tables.memos);
+  Database.saveDatabase(Tables.tags);
+  Database.saveDatabase(Tables.tag_list);
 
   alert('저장되었습니다.');
+
+  onBackClick();
+}
+
+
+function onDeleteClick() {
+  if (!confirm('정말 삭제하시겠습니까?'))
+    return;
+
+  if (IsModifyMode) {
+    Database.delete(Tables.memos, (memo) => memo.id === ModifyMemoId);
+    Database.delete(Tables.tag_list, (tag) => tag.memo_id === ModifyMemoId);
+    removeUnusedTags();
+
+    Database.saveDatabase(Tables.memos);
+    Database.saveDatabase(Tables.tags);
+    Database.saveDatabase(Tables.tag_list);
+  }
+
+  alert('메모가 삭제되었습니다.');
 
   onBackClick();
 }

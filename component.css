@@ -54,10 +54,22 @@ textarea {
 
 button {
   padding: 8px 16px;
-  background-color: #4CAF50;
+  background-color: transparent;
   color: white;
   border: none;
   cursor: pointer;
+}
+
+button.primary {
+  background-color: #4CAF50;
+}
+
+button.danger {
+  background-color: #f44336;
+}
+
+button.normal {
+  background-color: #999999;
 }
 
 button.tag-name {

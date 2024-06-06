@@ -317,7 +317,7 @@ const Tables = {
   memos: Database.createTable('memos',
     { id: (last) => last ? last.id + 1 : 1 , title: '', content: '', createdAt: new Date().toISOString() }),
   tag_list: Database.createTable('tag_list',
-    { memoId: 1, tagId: 1 }),
+    { memo_id: 1, tag_id: 1 }),
 };
 
 const Views = {
